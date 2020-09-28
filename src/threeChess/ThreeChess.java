@@ -57,7 +57,7 @@ public class ThreeChess{
     public String toString(){return "name:"+ agent+", won:"+won+", lost:"+lost+", played:"+played+", avg:"+average();}
 
     /**
-     * @param stats the object to compare to.
+     * @param o the object to compare to.
      * @return -1 if this object has a higher average than the paramater, 0 if the averages are equivalent and +1 if it has a lower average score.
      * **/
     public int compareTo(Object o){
@@ -95,7 +95,7 @@ public class ThreeChess{
             int[] players = {i,j,k};
             int[] ord = perms[random.nextInt(perms.length)];
             int[] res = play(bots[players[ord[0]]],bots[players[ord[1]]],bots[players[ord[2]]], timeLimit, logger, displayOn);
-            for(int o = 0; o<3;o++)scoreboard.get(bots[players[ord[o]]]).update(res[ord[o]]);
+            for(int o = 0; o<3;o++)scoreboard.get(bots[players[ord[o]]]).update(res[o]);
           }
         }
       }
@@ -161,6 +161,7 @@ public class ThreeChess{
             try{Thread.sleep(pause);}
             catch(InterruptedException e){} 
             display.repaintCanvas();
+            //display.repaint();
           }
         }
         catch(ImpossiblePositionException e){logger.println(e.getMessage());}
@@ -201,11 +202,45 @@ public class ThreeChess{
     play(man, man, man);
   }
 
+
+  /** 
+   * This plays amanual game where all rules are ignored.
+   * This effectively allows you to move pieces around the board for simulating positions.
+   * **/
+  public static void playCheat(){
+    Board board = new CheatBoard();
+    Agent agent = new ManualAgent();
+    ThreeChessDisplay display = new ThreeChessDisplay(board, "Blue", "Green", "Red");
+    while(!board.gameOver()){//note in an untimed game, this loop can run infinitely.
+      Colour colour = board.getTurn();
+      Position[] move = null;
+      try{
+        move = agent.playMove((Board)board.clone());
+      }catch(CloneNotSupportedException e){}
+      if(move!=null && move.length==2){
+        try{
+          board.move(move[0],move[1],0);
+          display.repaintCanvas();
+        }
+        catch(ImpossiblePositionException e){System.out.println(e.getMessage());}
+      }
+    }
+  }
+
+
+  /**
+   * This method can be customised to run tournaments with agents added in the code (add them to array bots), 
+   * or manual games between players, or a cheat mode which is effectively a board that can be freely manipulated.
+   * Run program with parameter "manual" for a game with moves added in the command line, "cheat" to ignore all rules, and no parameters to run a tournament between agents listed in bots.
+   **/
   public static void main(String[] args){
     Agent[] bots = {new RandomAgent(), new RandomAgent(), new RandomAgent()};
     if(args.length > 0 && args[0].equals("manual")){
       bots = new Agent[] {new ManualAgent("A"), new ManualAgent("B"), new ManualAgent("C")};
       tournament(bots,60,0,true, null);
+    }
+    else if (args.length > 0 && args[0].equals("cheat")){
+      playCheat();
     }
     else tournament(bots,300,0,true,null);
   }
