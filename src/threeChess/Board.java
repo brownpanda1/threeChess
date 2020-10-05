@@ -27,7 +27,6 @@ public class Board implements Cloneable, Serializable {
   /**A Map representing the remaining time allowed for each player, in milliseconds**/
   private HashMap<Colour,Integer> timeLeft;
 
-
   /**
    * Initialises the board, placing all pieces at their initial position.
    * Note, unlike two person chess, the Queen is always on the left, and the King is always on his own colour.
@@ -55,8 +54,10 @@ public class Board implements Cloneable, Serializable {
     }
   }
 
-  
-
+  /** @return whether in manual mode, the legal moves should be displayed on the board. **/
+  public boolean displayLegalMoves() {
+    return true;
+  }
 
   /**
    * Return a set of all the positions of pieces belonging to a player.
@@ -74,9 +75,7 @@ public class Board implements Cloneable, Serializable {
     return positions;
   }
 
-  /**
-   * @return a set of all the pieces captured by {@param player}.
-   */
+  /** @return a set of all the pieces captured by {@param player}. **/
   public List<Piece> getCaptured(Colour player) {
     return new ArrayList<>(captured.get(player));
   }
@@ -119,8 +118,40 @@ public class Board implements Cloneable, Serializable {
       current = next;
     }
     return current;
-  } 
+  }
 
+  /**
+   * Performs one step of a move such as the L shaped move of a knight, or a diagonal step of a Bishop.
+   * Rooks, Bishops and Queens may iterate one step repeatedly, but all other pieces can only move one step per move.
+   * Note the colour of the piece is relevant as moving forward past the 4th row is actually moving backwards relative to the board.
+   * It does not check whether the move is legal or possible.
+   * Overloaded operation with an extra parameter to allow for checking if an iterated move needs to be reversed. 
+   * @param piece the piece being moved
+   * @param step an array of the direction sequence in the step
+   * @param current the starting position of the step.
+   * @param reverse whether the steps out to be reversed (if the piece crosses board section).
+   * @return the position at the end of the step.
+   * @throws ImpossiblePositionException if the step takes piece off the board.
+   * **/
+  public Position step(Piece piece, Direction[] step, Position current, boolean reverse) throws ImpossiblePositionException{
+    for(Direction d: step){
+      if((piece.getColour()!=current.getColour() && piece.getType() == PieceType.PAWN) || reverse){//reverse directions for knights
+        switch(d){
+          case FORWARD: d = Direction.BACKWARD; break;
+          case BACKWARD: d = Direction.FORWARD; break;
+          case LEFT: d = Direction.RIGHT; break;
+          case RIGHT: d = Direction.LEFT; break;
+        }
+      }
+      Position next = current.neighbour(d);
+      if(next.getColour()!= current.getColour()){//need to reverse directions when switching between sections of the board
+        reverse=true;
+      }
+      current = next;
+    }
+    return current;
+  }
+  
   /**
    * Checks if a move is legal. 
    * The move is specified by the start position (where the moving piece begins),
@@ -185,7 +216,8 @@ public class Board implements Cloneable, Serializable {
               Piece castle = board.get(Position.get(mCol,0,7));
               Piece empty1 = board.get(Position.get(mCol,0,5));
               Piece empty2 = board.get(Position.get(mCol,0,6));
-              if(castle.getType()==PieceType.ROOK && castle.getColour()==mover.getColour() && empty1==null && empty2==null)
+              if(castle!=null && castle.getType()==PieceType.ROOK && castle.getColour()==mover.getColour()
+                  && empty1==null && empty2==null)
                 return true;
             }
             if(end==Position.get(mCol,0,2)){
@@ -193,7 +225,8 @@ public class Board implements Cloneable, Serializable {
               Piece empty1 = board.get(Position.get(mCol,0,1));
               Piece empty2 = board.get(Position.get(mCol,0,2));
               Piece empty3 = board.get(Position.get(mCol,0,3));
-              if(castle.getType()==PieceType.ROOK && castle.getColour()==mover.getColour() && empty1==null && empty2==null && empty3==null)
+              if(castle!=null && castle.getType()==PieceType.ROOK && castle.getColour()==mover.getColour()
+                  && empty1==null && empty2==null && empty3==null)
                 return true;
             }
           }
@@ -205,18 +238,7 @@ public class Board implements Cloneable, Serializable {
           try{
             Position tmp = step(mover,step,start);
             while(end != tmp && board.get(tmp)==null){
-              if(tmp.getColour()!=start.getColour()){//flip steps when moving between board sections.
-                step = new Direction[steps[i].length];
-                for(int j = 0; j<steps[i].length; j++){
-                  switch(steps[i][j]){
-                    case FORWARD: step[j] = Direction.BACKWARD; break;
-                    case BACKWARD: step[j] = Direction.FORWARD; break;
-                    case LEFT: step[j] = Direction.RIGHT; break;
-                    case RIGHT: step[j] = Direction.LEFT; break;
-                  }
-                }
-              }
-              tmp = step(mover, step,tmp);
+              tmp = step(mover, step, tmp, tmp.getColour()!=start.getColour());
             }
             if(end==tmp) return true;
           }catch(ImpossiblePositionException e){}//do nothing, steps went off board.
@@ -225,7 +247,6 @@ public class Board implements Cloneable, Serializable {
     }
     return false;//move did not match any legal option.
   }
-
 
   /**
    * Executes a legal move. 
