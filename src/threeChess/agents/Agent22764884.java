@@ -13,17 +13,16 @@ public class Agent22764884 extends Agent{
 
 	public Position[][] nextMoves(Board board) {
 	// Find all of our piece positions and all of the board nextPositions
-    Position[] pieces = board.getPositions(board.getTurn()).toArray(new Position[0]);
-    Position[] next = Position.values();
-    ArrayList<Position[]> nextMoves = new ArrayList<>();
-    // Enumerate over all possible move nextPositions for all pieces
-    for (Position piece : pieces) {
+    	Position[] pieces = board.getPositions(board.getTurn()).toArray(new Position[0]);
+    	Position[] next = Position.values();
+    	ArrayList<Position[]> nextMoves = new ArrayList<>();
+    	for (Position piece : pieces) {
     	for (Position positions : next) {
     		// Move piece to position
     		Position[] move = new Position[] {piece, positions};
         	if (board.isLegalMove(piece, positions) && !nextMoves.contains(move)) nextMoves.add(move);
       		}
-    }
+    	}
     
 	return nextMoves.toArray(new Position[0][0]);
 	}
