@@ -18,7 +18,7 @@ public class Agent22764884 extends Agent{
     	ArrayList<Position[]> nextMoves = new ArrayList<>();
     	for (Position piece : pieces) {
     	for (Position positions : next) {
-    		// Move piece to position
+    		// Move piece to position and test if legal
     		Position[] move = new Position[] {piece, positions};
         	if (board.isLegalMove(piece, positions) && !nextMoves.contains(move)) nextMoves.add(move);
       		}
